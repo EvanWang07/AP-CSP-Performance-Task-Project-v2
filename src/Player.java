@@ -5,6 +5,7 @@ public class Player {
     private int maxHealth;
     private int currentHealth;
     private int basicAttackDamage;
+    private int anger;
     private double resistance;
     private boolean isAlive;
     private int currentXP;
@@ -18,6 +19,7 @@ public class Player {
         maxHealth = scaleStat(this.level, 1, baseMaxHealth);
         currentHealth = maxHealth;
         basicAttackDamage = scaleStat(this.level, 1, baseBasicAttackDamage);
+        anger = 0;
         resistance = 0;
         charged = false;
         isAlive = true;
@@ -27,10 +29,11 @@ public class Player {
     public void reset() {
         level = 1;
         currentXP = 0;
-        requiredXPForNextLevel = 50;
+        requiredXPForNextLevel = 100;
         maxHealth = 100;
         currentHealth = 100;
         basicAttackDamage = 20;
+        anger = 0;
         resistance = 0;
         charged = false;
         isAlive = true;
@@ -92,6 +95,10 @@ public class Player {
         return charged;
     }
 
+    public boolean isAngry() {
+        return (anger == 500);
+    }
+
     /* Altering Health */
     public void alterCurrentHealth(int amount) {
         currentHealth += amount;
@@ -106,6 +113,13 @@ public class Player {
     }
 
     public void takeDamage(int amount) {
+        int angerIncrease = (int) ((amount * 100) / (double) maxHealth);
+        if ((anger + angerIncrease) >= 500) {
+            anger = 500;
+            System.out.println(TextColor.GREEN + "You suddenly become EXTREMELY ANGRY, allowing you to cast an extremely powerful attack!" + TextColor.WHITE);
+        } else {
+            anger += angerIncrease;
+        }
         int damageTaken = (int) ((1 - resistance) * amount);
         if (damageTaken >= currentHealth) {
             isAlive = false;
@@ -164,6 +178,25 @@ public class Player {
         charged = false;
         System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
         System.out.println("As you make your attack, you feel your magical charge dissipate...");
+        System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+    }
+
+    public void castRageAttack(ArrayList<Enemy> enemyGroup, int centeredPosition) {
+        System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+        for (int i = 0; i < enemyGroup.size(); i++) {
+            double randomMultiplier = 0.5 * (Math.random() - 0.5) + 1;
+            int actualDamage = (int) (basicAttackDamage * randomMultiplier * 2.5);
+            if (i == centeredPosition) {
+                actualDamage *= 5;
+            }
+            enemyGroup.get(i).takeDamage(actualDamage);
+            System.out.println("You landed an attack on enemy #" + enemyGroup.get(i).getPosition() + ", dealing " + (int) ((1 - enemyGroup.get(i).getResistance()) * actualDamage) + " damage!");
+        }
+        System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+        charged = true;
+        anger = 0;
+        System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+        System.out.println("As your attack ends, your remaining anger charges you, preparing another major spell...");
         System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
     }
 

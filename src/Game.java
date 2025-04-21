@@ -10,7 +10,7 @@ public class Game {
 
     public Game() {
         stage = 0;
-        player = new Player(1, 100, 20, 50);
+        player = new Player(1, 100, 20, 100);
         enemies = new ArrayList<>();
         enemyAmount = 0;
         listener = new Scanner(System.in);
@@ -49,14 +49,14 @@ public class Game {
     }
 
     public int determineAmountOfEnemies() {
-        int difficultyNumber = (int) (Math.random() * 4 * stage + 1);
+        int difficultyNumber = (int) (Math.random() * 4 * stage + stage + 1);
         if (difficultyNumber <= 10) {
             return 1;
         } else if (difficultyNumber <= 20) {
             return 2;
-        } else if (difficultyNumber <= 30) {
+        } else if (difficultyNumber <= 40) {
             return 3;
-        } else if (difficultyNumber <= 50) {
+        } else if (difficultyNumber <= 70) {
             return 4;
         } else {
             return 5;
@@ -73,7 +73,7 @@ public class Game {
         enemies.clear();
         enemyAmount = determineAmountOfEnemies();
         for (int i = 0; i < enemyAmount; i++) {
-            enemies.add(i, new Enemy(stage, 50, 10, i + 1));
+            enemies.add(i, new Enemy(stage, 40, 10, i + 1));
         }
         System.out.println("-----------------------------------------------------------------------");
         if (enemyAmount == 1) {
@@ -103,9 +103,17 @@ public class Game {
         System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
         System.out.println("It is currently your turn. What would you like to do?");
         if (player.isCharged()) {
-            System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [5 - USE AREA ATTACK], [6 - CAST BIGGER HEAL]");
+            if (player.isAngry()) {
+                System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [5 - USE AREA ATTACK], [6 - CAST BIGGER HEAL], [9 - RAGE ATTACK!!!]");
+            } else {
+                System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [5 - USE AREA ATTACK], [6 - CAST BIGGER HEAL]");
+            }
         } else {
-            System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [4 - CAST CHARGE]");
+            if (player.isAngry()) {
+                System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [4 - CAST CHARGE], [9 - RAGE ATTACK!!!]");
+            } else {
+                System.out.println("OPTIONS: [0 - SKIP TURN], [1 - USE BASIC ATTACK], [2 - CAST HEAL], [3 - CAST DEFEND], [4 - CAST CHARGE]");
+            }
         }
         
         System.out.println("Type the number corresponding to the action you want to take!");
@@ -188,6 +196,33 @@ public class Game {
                     beginPlayerTurn();
                 }
                 break;
+            case 9:
+                if (player.isAngry()) {
+                    System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+                    System.out.println("Select a target to center your anger on!");
+                    System.out.print("OPTIONS: [0 - CANCEL]");
+                    for (int i = 0; i < enemyAmount; i++) {
+                        System.out.print(", [" + (i + 1) + " - ENEMY #" + (i + 1) + "]");
+                    }
+                    System.out.println();
+                    System.out.println("Type the number corresponding to the action you want to take!");
+                    System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+                    int selectedCenter = listener.nextInt();
+                    selectPlayerAngerAttackTarget(selectedCenter);
+                    checkGameStatus();
+                } else {
+                    System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+                    System.out.println("You do not seem to be ready to cast this attack...");
+                    System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    beginPlayerTurn();
+                }
+                beginEnemyTurn();
+                break;
             default:
                 System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
                 System.out.println("An invalid move was given: try again!");
@@ -228,6 +263,36 @@ public class Game {
                 e.printStackTrace();
             }
             makePlayerMove(player, 1);
+        }
+    }
+
+    public void selectPlayerAngerAttackTarget(int selectedTargetNumber) {
+        if (selectedTargetNumber == 0) {
+            beginPlayerTurn();
+        } else if ((selectedTargetNumber > 0) && (selectedTargetNumber <= enemyAmount)) {
+            if (enemies.get(selectedTargetNumber - 1).enemyIsAlive()) {
+                player.castRageAttack(enemies, selectedTargetNumber - 1);
+            } else {
+                System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+                System.out.println("You cannot center your rage on a dead enemy: try again!");
+                System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                makePlayerMove(player, 1);
+            }
+        } else {
+            System.out.println(TextColor.GREEN + "-----------------------------------------------------------------------");
+            System.out.println("An invalid rage attack center was given: try again!");
+            System.out.println("-----------------------------------------------------------------------" + TextColor.WHITE);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            makePlayerMove(player, 9);
         }
     }
 
@@ -297,7 +362,7 @@ public class Game {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        int rewardXP = stage * 10 + enemyAmount * 5;
+        int rewardXP = stage * 10 + enemyAmount * 10;
         player.awardXP(rewardXP);
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("Congratulations! You killed all the enemies on this stage!");
